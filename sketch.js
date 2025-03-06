@@ -843,16 +843,17 @@ function keyPressed() {
       case 'b':
         enemies.push(new Enemy(width/2, 0, 'boss')); // Spawn boss
         break;
-      case 'l': // Level switching with numbers
-        if (keyIsDown(49)) switchLevel(1); // 1
-        if (keyIsDown(50)) switchLevel(2); // 2
-        if (keyIsDown(51)) switchLevel(3); // 3
-        if (keyIsDown(52)) switchLevel(4); // 4
-        if (keyIsDown(53)) switchLevel(5); // 5
-        if (keyIsDown(54)) switchLevel(6); // 6
-        if (keyIsDown(55)) switchLevel(7); // 7
-        if (keyIsDown(56)) switchLevel(8); // 8
-        if (keyIsDown(57)) switchLevel(9); // 9
+      case '1':
+      case '2':
+      case '3':
+      case '4':
+      case '5':
+      case '6':
+      case '7':
+      case '8':
+      case '9':
+        // Convert key to number and switch level
+        switchLevel(parseInt(key));
         break;
     }
   }
@@ -1069,7 +1070,7 @@ function drawDebugInfo() {
   text(`[I] Invincible: ${debugControls.invincible}`, debugPanel.x + 10, y + lineHeight * 6);
   text(`[H] Show Hitboxes: ${debugControls.showHitboxes}`, debugPanel.x + 10, y + lineHeight * 7);
   text(`[P] Infinite Powerups: ${debugControls.infinitePowerups}`, debugPanel.x + 10, y + lineHeight * 8);
-  text(`[L+1-9] Switch Level`, debugPanel.x + 10, y + lineHeight * 9);
+  text(`[1-9] Switch Level`, debugPanel.x + 10, y + lineHeight * 9);
   text(`[K] Kill All Enemies`, debugPanel.x + 10, y + lineHeight * 10);
   text(`[B] Spawn Boss`, debugPanel.x + 10, y + lineHeight * 11);
 }
