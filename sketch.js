@@ -75,6 +75,9 @@ let debugControls = {
   slowMotion: false
 };
 
+// Add a debug-related variable at the start with other debug variables
+let debugHighScore = 0; // Separate high score for debug mode
+
 // Modify levelConfig to handle any level dynamically
 const levelConfig = {
   getConfig(level) {
@@ -746,29 +749,42 @@ function draw() {
       bossWarning--;
     }
   } else if (gameState === "gameover") {
-    // Update high score if current score is higher
-    if (score > highScore) {
-      highScore = score;
-      localStorage.setItem('highScore', highScore);  // Save to storage
-    }
-    
     // Game over screen
     fill(255, 0, 0);
     textSize(32);
     textAlign(CENTER);
     text("Game Over", width / 2, height / 2 - 40);
+    
     fill(255);
     textSize(20);
     text("Final Score: " + score, width / 2, height / 2);
-    if (score >= highScore) {
-      fill(255, 215, 0);  // Gold color for new high score
-      text("New High Score!", width / 2, height / 2 + 30);
+
+    // Handle high scores differently for debug and normal modes
+    if (debugMode) {
+        // Only update debug high score
+        if (score > debugHighScore) {
+            debugHighScore = score;
+            fill(255, 215, 0);  // Gold color
+            text("New Debug High Score!", width / 2, height / 2 + 30);
+        }
+        fill(255);
+        text("Debug High Score: " + debugHighScore, width / 2, height / 2 + 30);
+        text("Real High Score: " + highScore, width / 2, height / 2 + 60);  // Show real high score too
     } else {
-      fill(255);
-      text("High Score: " + highScore, width / 2, height / 2 + 30);
+        // Only update real high score in normal mode
+        if (score > highScore) {
+            highScore = score;
+            localStorage.setItem('highScore', highScore);
+            fill(255, 215, 0);  // Gold color
+            text("New High Score!", width / 2, height / 2 + 30);
+        } else {
+            fill(255);
+            text("High Score: " + highScore, width / 2, height / 2 + 30);
+        }
     }
-    text("You were hit by an enemy ship!", width / 2, height / 2 + 60);
-    text("Press 'r' to restart", width / 2, height / 2 + 90);
+
+    text("You were hit by an enemy ship!", width / 2, height / 2 + 90);
+    text("Press 'r' to restart", width / 2, height / 2 + 120);
   }
 
   // Draw debug information
@@ -814,6 +830,7 @@ function keyPressed() {
     } else {
       // Disable invincibility when leaving debug mode
       debugControls.invincible = false;
+      debugHighScore = 0; // Reset debug high score when leaving debug mode
     }
     console.log('Debug mode:', debugMode);
   }
@@ -1073,6 +1090,9 @@ function drawDebugInfo() {
   text(`[1-9] Switch Level`, debugPanel.x + 10, y + lineHeight * 9);
   text(`[K] Kill All Enemies`, debugPanel.x + 10, y + lineHeight * 10);
   text(`[B] Spawn Boss`, debugPanel.x + 10, y + lineHeight * 11);
+
+  // Add debug high score to the panel
+  text(`Debug High Score: ${debugHighScore}`, debugPanel.x + 10, y + lineHeight * 12);
 }
 
 // Add infinite powerups if enabled
