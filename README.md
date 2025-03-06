@@ -41,12 +41,12 @@ A retro-style space shooter where you defend humanity against rogue AI ships. Ba
 - Press **`** (backtick) to toggle debug mode
 
 ### Debug Controls
-- **I**: Toggle invincibility
-- **H**: Show hitboxes
-- **P**: Infinite power-ups
-- **S**: Toggle slow motion
-- **K**: Kill all enemies
-- **B**: Spawn boss
+- **i**: Toggle invincibility
+- **h**: Show hitboxes
+- **p**: Infinite power-ups
+- **s**: Toggle slow motion
+- **k**: Kill all enemies
+- **b**: Spawn boss
 - **1-9**: Switch to specific level
 
 ### Debug Information Display
@@ -95,13 +95,13 @@ A retro-style space shooter where you defend humanity against rogue AI ships. Ba
 - Keep track of your progress with the level bar
 
 ## 🎨 Credits
-- Game Design & Development: [Your Name]
+- Game Design & Development: Ahmed
 - Built with [p5.js](https://p5js.org/)
-- Font: [Font Name]
-- Sound Effects: [Source]
+- Font: [js, html, css, p5.js]
+- Sound Effects: [Coming soon]
 
 ## 📝 License
-[Your chosen license]
+[MIT]
 
 ## 🤝 Contributing
 Feel free to contribute to this project by:
@@ -112,4 +112,4 @@ Feel free to contribute to this project by:
 5. Opening a Pull Request
 
 ## 📬 Contact
-[Your contact information] 
+ 
