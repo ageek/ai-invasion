@@ -64,47 +64,68 @@ let powerUpEffects = {
 let levelCompleteTimer = 0;
 let isLevelTransitioning = false;
 
-// Add level configuration object
+// Modify levelConfig to handle any level dynamically
 const levelConfig = {
-  1: {
-    enemySpeed: 2,
-    spawnRate: 60,
-    hunterChance: 0.2,
-    powerupChance: 0.002,
-    enemiesRequired: 10,
-    bossHealth: 10
-  },
-  2: {
-    enemySpeed: 2.5,
-    spawnRate: 50,
-    hunterChance: 0.3,
-    powerupChance: 0.003,
-    enemiesRequired: 15,
-    bossHealth: 15
-  },
-  3: {
-    enemySpeed: 3,
-    spawnRate: 40,
-    hunterChance: 0.4,
-    powerupChance: 0.004,
-    enemiesRequired: 20,
-    bossHealth: 20
-  },
-  4: {
-    enemySpeed: 3.5,
-    spawnRate: 35,
-    hunterChance: 0.5,
-    powerupChance: 0.005,
-    enemiesRequired: 25,
-    bossHealth: 25
-  },
-  5: {
-    enemySpeed: 4,
-    spawnRate: 30,
-    hunterChance: 0.6,
-    powerupChance: 0.006,
-    enemiesRequired: 30,
-    bossHealth: 30
+  getConfig(level) {
+    // Base configuration for level 1
+    const baseConfig = {
+      enemySpeed: 2,
+      spawnRate: 60,
+      hunterChance: 0.2,
+      powerupChance: 0.002,
+      enemiesRequired: 10,
+      bossHealth: 10
+    };
+
+    // For levels beyond 5, scale difficulty progressively
+    if (level > 5) {
+      const scaleFactor = 1 + ((level - 5) * 0.15); // 15% increase per level
+      return {
+        enemySpeed: baseConfig.enemySpeed * scaleFactor,
+        spawnRate: Math.max(20, baseConfig.spawnRate - (level * 2)), // Don't go below 20
+        hunterChance: Math.min(0.8, 0.2 + (level * 0.05)), // Cap at 80%
+        powerupChance: Math.min(0.01, baseConfig.powerupChance + (level * 0.0005)), // Cap at 1%
+        enemiesRequired: baseConfig.enemiesRequired + (level * 5),
+        bossHealth: baseConfig.bossHealth + (level * 5)
+      };
+    }
+
+    // Use predefined configurations for levels 1-5
+    return {
+      1: baseConfig,
+      2: {
+        enemySpeed: 2.5,
+        spawnRate: 50,
+        hunterChance: 0.3,
+        powerupChance: 0.003,
+        enemiesRequired: 15,
+        bossHealth: 15
+      },
+      3: {
+        enemySpeed: 3,
+        spawnRate: 40,
+        hunterChance: 0.4,
+        powerupChance: 0.004,
+        enemiesRequired: 20,
+        bossHealth: 20
+      },
+      4: {
+        enemySpeed: 3.5,
+        spawnRate: 35,
+        hunterChance: 0.5,
+        powerupChance: 0.005,
+        enemiesRequired: 25,
+        bossHealth: 25
+      },
+      5: {
+        enemySpeed: 4,
+        spawnRate: 30,
+        hunterChance: 0.6,
+        powerupChance: 0.006,
+        enemiesRequired: 30,
+        bossHealth: 30
+      }
+    }[level] || baseConfig;
   }
 };
 
@@ -167,10 +188,10 @@ class Enemy {
     this.y = y;
     this.type = type;
     this.radius = type === 'boss' ? 40 : 20;
-    this.health = type === 'boss' ? levelConfig[level].bossHealth : 1;
+    this.health = type === 'boss' ? levelConfig.getConfig(level).bossHealth : 1;
     this.speed = type === 'hunter' ? 
-      levelConfig[level].enemySpeed * 1.5 : 
-      levelConfig[level].enemySpeed;
+      levelConfig.getConfig(level).enemySpeed * 1.5 : 
+      levelConfig.getConfig(level).enemySpeed;
     this.rotation = 0;
     this.pulsePhase = random(TWO_PI);
     this.isAggressive = type === 'hunter' ? random() < 0.2 : false;
@@ -583,8 +604,8 @@ function draw() {
 
     // Spawn new enemies
     enemyTimer++;
-    if (enemyTimer >= levelConfig[level].spawnRate) {
-      let type = random() < levelConfig[level].hunterChance ? 'hunter' : 'basic';
+    if (enemyTimer >= levelConfig.getConfig(level).spawnRate) {
+      let type = random() < levelConfig.getConfig(level).hunterChance ? 'hunter' : 'basic';
       enemies.push(new Enemy(random(width), 0, type));
       enemyTimer = 0;
     }
@@ -600,7 +621,7 @@ function draw() {
     }
     
     // Random power-up spawn
-    if (random() < levelConfig[level].powerupChance) {
+    if (random() < levelConfig.getConfig(level).powerupChance) {
       powerups.push(new PowerUp(random(width), 0));
     }
     
@@ -674,14 +695,14 @@ function draw() {
     text("Level: " + level, 10, 90);
     
     // Level progress bar
-    let progress = enemiesDefeatedInLevel / levelConfig[level].enemiesRequired;
+    let progress = enemiesDefeatedInLevel / levelConfig.getConfig(level).enemiesRequired;
     fill(100);
     rect(10, 100, 200, 10);
     fill(0, 255, 150);
     rect(10, 100, 200 * progress, 10);
 
     // Check for level completion
-    if (enemiesDefeatedInLevel >= levelConfig[level].enemiesRequired && !isLevelTransitioning) {
+    if (enemiesDefeatedInLevel >= levelConfig.getConfig(level).enemiesRequired && !isLevelTransitioning) {
       isLevelTransitioning = true;
       levelCompleteTimer = frameCount + 180;
     }
@@ -733,31 +754,9 @@ function draw() {
 // Handle key presses
 function keyPressed() {
   if (gameState === "start") {
-    // Start game with any key
-    gameState = "playing";
-    player = new Player();
-    enemies = [];
-    bullets = [];
-    explosions = [];
-    playerParticles = [];
-    floatingTexts = [];
-    powerups = [];
-    currentPowerUpType = null;
-    score = 0;
-    enemyTimer = 0;
-  } else if (gameState === "gameover" && (key === 'r' || key === 'R')) {  // Check for 'R' key
-    // Restart game only with 'R' key
-    gameState = "playing";
-    player = new Player();
-    enemies = [];
-    bullets = [];
-    explosions = [];
-    playerParticles = [];
-    floatingTexts = [];
-    powerups = [];
-    currentPowerUpType = null;
-    score = 0;
-    enemyTimer = 0;
+    resetGame();
+  } else if (gameState === "gameover" && key === 'r') {  // Changed to only lowercase 'r'
+    resetGame();
   }
 
   if (gameState === "playing") {
@@ -843,7 +842,7 @@ function showLevelComplete() {
   if (frameCount >= levelCompleteTimer) {
     level++;
     enemiesDefeatedInLevel = 0;
-    enemySpawnRate = levelConfig[level].spawnRate;
+    enemySpawnRate = levelConfig.getConfig(level).spawnRate;
     isLevelTransitioning = false;
   }
 }
@@ -911,4 +910,24 @@ function handlePowerUpEffects() {
       }
     }
   }
+}
+
+// Add resetGame function
+function resetGame() {
+  gameState = "playing";
+  player = new Player();
+  enemies = [];
+  bullets = [];
+  explosions = [];
+  playerParticles = [];
+  floatingTexts = [];
+  powerups = [];
+  currentPowerUpType = null;
+  score = 0;
+  enemyTimer = 0;
+  level = 1; // Reset level
+  enemiesDefeatedInLevel = 0;
+  isLevelTransitioning = false;
+  multiplier = 1;
+  killStreak = 0;
 }
