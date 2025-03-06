@@ -64,6 +64,17 @@ let powerUpEffects = {
 let levelCompleteTimer = 0;
 let isLevelTransitioning = false;
 
+// Add these debug-related variables at the start with other global variables
+let debugMode = false;
+let debugPanel;
+
+let debugControls = {
+  invincible: false,
+  showHitboxes: false,
+  infinitePowerups: false,
+  slowMotion: false
+};
+
 // Modify levelConfig to handle any level dynamically
 const levelConfig = {
   getConfig(level) {
@@ -449,6 +460,15 @@ function setup() {
   createCanvas(800, 600);
   frameRate(60);
 
+  // Initialize debugPanel with proper dimensions and higher position
+  debugPanel = {
+    visible: false,
+    x: 10,
+    y: height - 250, // Moved up by 100 pixels
+    width: 200,
+    height: 200  // Increased height to fit all info
+  };
+
   // Initialize starfield
   for (let i = 0; i < 100; i++) {
     stars.push({
@@ -554,7 +574,9 @@ function draw() {
       enemy.draw();
       // Only check for collision with player
       if (dist(enemy.x, enemy.y, player.x, player.y) < (enemy.radius + player.radius)) {
-        gameState = "gameover";
+        if (!debugControls.invincible) {
+          gameState = "gameover";
+        }
       }
     });
 
@@ -746,8 +768,12 @@ function draw() {
       text("High Score: " + highScore, width / 2, height / 2 + 30);
     }
     text("You were hit by an enemy ship!", width / 2, height / 2 + 60);
-    text("Press 'R' to restart", width / 2, height / 2 + 90);
+    text("Press 'r' to restart", width / 2, height / 2 + 90);
   }
+
+  // Draw debug information
+  drawDebugInfo();
+
   pop();
 }
 
@@ -776,6 +802,58 @@ function keyPressed() {
         }
         lastShot = frameCount;
       }
+    }
+  }
+
+  // Debug controls
+  if (key === '`') { // Toggle debug mode with backtick key
+    debugMode = !debugMode;
+    if (debugMode) {
+      // Enable invincibility by default when entering debug mode
+      debugControls.invincible = true;
+    } else {
+      // Disable invincibility when leaving debug mode
+      debugControls.invincible = false;
+    }
+    console.log('Debug mode:', debugMode);
+  }
+
+  if (debugMode) {
+    switch (key) {
+      case 'i':
+        debugControls.invincible = !debugControls.invincible;
+        break;
+      case 'h':
+        debugControls.showHitboxes = !debugControls.showHitboxes;
+        break;
+      case 'p':
+        debugControls.infinitePowerups = !debugControls.infinitePowerups;
+        break;
+      case 's':
+        debugControls.slowMotion = !debugControls.slowMotion;
+        if (debugControls.slowMotion) {
+          frameRate(30);
+        } else {
+          frameRate(60);
+        }
+        break;
+      case 'k':
+        enemies = []; // Kill all enemies
+        break;
+      case 'b':
+        enemies.push(new Enemy(width/2, 0, 'boss')); // Spawn boss
+        break;
+      case 'l': // Level switching with numbers
+        if (keyIsDown(49)) switchLevel(1); // 1
+        if (keyIsDown(50)) switchLevel(2); // 2
+        if (keyIsDown(51)) switchLevel(3); // 3
+        if (keyIsDown(52)) switchLevel(4); // 4
+        if (keyIsDown(53)) switchLevel(5); // 5
+        if (keyIsDown(54)) switchLevel(6); // 6
+        if (keyIsDown(55)) switchLevel(7); // 7
+        if (keyIsDown(56)) switchLevel(8); // 8
+        if (keyIsDown(57)) switchLevel(9); // 9
+        break;
     }
   }
 }
@@ -915,6 +993,7 @@ function handlePowerUpEffects() {
 // Add resetGame function
 function resetGame() {
   gameState = "playing";
+  // Initialize player after game state is set
   player = new Player();
   enemies = [];
   bullets = [];
@@ -925,9 +1004,87 @@ function resetGame() {
   currentPowerUpType = null;
   score = 0;
   enemyTimer = 0;
-  level = 1; // Reset level
+  level = 1;
   enemiesDefeatedInLevel = 0;
   isLevelTransitioning = false;
   multiplier = 1;
   killStreak = 0;
+  nextBossScore = 50; // Reset boss score threshold
+  screenShake = 0;
+  bossWarning = 0;
+}
+
+// Add debug command system
+function handleDebugCommand(command) {
+  const args = command.split(' ');
+  switch(args[0].toLowerCase()) {
+    case 'level':
+      level = parseInt(args[1]) || 1;
+      enemiesDefeatedInLevel = 0;
+      break;
+    case 'score':
+      score = parseInt(args[1]) || 0;
+      break;
+    case 'kill':
+      enemies = [];
+      break;
+    case 'powerup':
+      if (args[1]) {
+        powerups.push(new PowerUp(player.x, player.y - 50));
+      }
+      break;
+    case 'boss':
+      enemies.push(new Enemy(width/2, 0, 'boss'));
+      break;
+    case 'speed':
+      if (args[1]) player.speed = parseFloat(args[1]);
+      break;
+  }
+}
+
+// Add this to the draw function, after the game state checks
+function drawDebugInfo() {
+  if (!debugMode) return;
+
+  // Debug panel background
+  fill(0, 0, 0, 200);
+  rect(debugPanel.x, debugPanel.y, debugPanel.width, debugPanel.height);
+  
+  // Debug information
+  fill(0, 255, 0);
+  textAlign(LEFT);
+  textSize(12);
+  let y = debugPanel.y + 20;
+  let lineHeight = 20; // Consistent line spacing
+
+  // Game stats
+  text(`FPS: ${Math.round(frameRate())}`, debugPanel.x + 10, y);
+  text(`Entities: ${enemies.length + bullets.length + particles.length}`, debugPanel.x + 10, y + lineHeight);
+  text(`Level: ${level} (${enemiesDefeatedInLevel}/${levelConfig.getConfig(level).enemiesRequired})`, debugPanel.x + 10, y + lineHeight * 2);
+  text(`Player Pos: ${Math.round(player.x)},${Math.round(player.y)}`, debugPanel.x + 10, y + lineHeight * 3);
+  text(`Active Power-up: ${currentPowerUpType || 'none'}`, debugPanel.x + 10, y + lineHeight * 4);
+  
+  // Debug controls status
+  text(`[\`] Debug Mode: ${debugMode}`, debugPanel.x + 10, y + lineHeight * 5);
+  text(`[I] Invincible: ${debugControls.invincible}`, debugPanel.x + 10, y + lineHeight * 6);
+  text(`[H] Show Hitboxes: ${debugControls.showHitboxes}`, debugPanel.x + 10, y + lineHeight * 7);
+  text(`[P] Infinite Powerups: ${debugControls.infinitePowerups}`, debugPanel.x + 10, y + lineHeight * 8);
+  text(`[L+1-9] Switch Level`, debugPanel.x + 10, y + lineHeight * 9);
+  text(`[K] Kill All Enemies`, debugPanel.x + 10, y + lineHeight * 10);
+  text(`[B] Spawn Boss`, debugPanel.x + 10, y + lineHeight * 11);
+}
+
+// Add infinite powerups if enabled
+if (debugControls.infinitePowerups && currentPowerUpType) {
+  powerUpEffects[currentPowerUpType].timer = frameCount + powerUpEffects[currentPowerUpType].duration;
+}
+
+// Add this new function to handle level switching
+function switchLevel(newLevel) {
+    level = newLevel;
+    enemiesDefeatedInLevel = 0;
+    enemies = []; // Clear current enemies
+    bullets = []; // Clear bullets
+    powerups = []; // Clear powerups
+    console.log(`Switched to Level ${newLevel}`);
 }
